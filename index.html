@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Petualangan Lambang Pancasila - Kelas 1 SD</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Quicksand (Sangat ramah anak SD) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Tone.js untuk efek suara audio sintetis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <!-- Canvas Confetti untuk selebrasi kemenangan -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <!-- SheetJS (XLSX) untuk unduh laporan nilai Excel otomatis -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Font Awesome untuk ikon interaktif -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.js">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Quicksand', sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      background: radial-gradient(circle at 50% 20%, #eff6ff 0%, #dbeafe 60%, #bfdbfe 100%);
+    }
+
+    .font-reading {
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    /* Efek tombol 3D anak-anak */
+    .btn-bouncy {
+      transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+    }
+    .btn-bouncy:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    /* Animasi kartu bergoyang lembut */
+    @keyframes gentleWiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-1.5deg); }
+      75% { transform: rotate(1.5deg); }
+    }
+    .hover-wiggle:hover {
+      animation: gentleWiggle 0.4s ease-in-out infinite;
+    }
+
+    /* Glow seleksi kartu */
+    .card-selected {
+      border-color: #f59e0b !important;
+      background-color: #fef3c7 !important;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.6) !important;
+      transform: scale(1.03);
+    }
+
+    .card-matched {
+      border-color: #10b981 !important;
+      background-color: #ecfdf5 !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4) !important;
+    }
+
+    /* Garis penghubung canvas */
+    #connectingCanvas {
+      pointer-events: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+    }
+
+    /* Animasi Bintang */
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.15) rotate(5deg); }
+    }
+    .star-animate {
+      animation: starPulse 1.8s infinite ease-in-out;
+    }
+
+    /* Scrollbar halus untuk papan interaktif */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #93c5fd;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 overflow-x-hidden relative flex flex-col justify-between">
+
+  <!-- Top Navigation & Status Bar -->
+  <header class="w-full bg-white/90 backdrop-blur-md border-b-4 border-amber-400 px-4 py-3 sticky top-0 z-40 shadow-md">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
+      <!-- Tombol Kembali Menu Awal & Logo -->
+      <div class="flex items-center gap-3">
+        <button id="btnHome" onclick="confirmGoHome()" class="hidden btn-bouncy bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-2xl flex items-center gap-2 text-sm sm:text-base border-2 border-rose-700 transition">
+          <i class="fa-solid fa-house text-lg"></i>
+          <span class="hidden sm:inline">Menu Awal</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="text-3xl">🇮🇩</span>
+          <div>
+            <h1 class="font-bold text-lg sm:text-2xl text-red-600 leading-tight">PANCASILA CERIA</h1>
+            <p class="text-xs sm:text-sm font-semibold text-slate-500 hidden sm:block">Kelas 1 SD • Belajar & Bermain Interaktif</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informasi Siswa & Tombol Kontrol Suara -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Badge Siswa Aktif -->
+        <div id="studentBadge" class="hidden bg-amber-100 border-2 border-amber-400 text-amber-900 px-3 py-1.5 rounded-2xl text-xs sm:text-sm font-bold items-center gap-1.5">
+          <i class="fa-solid fa-child text-amber-600"></i>
+          <span id="badgeNameDisplay" class="max-w-[120px] truncate">Budi</span>
+          <span class="text-amber-500 font-normal">|</span>
+          <span id="badgeClassDisplay">1A</span>
+        </div>
+
+        <!-- Tombol Suara SFX -->
+        <button id="btnSoundToggle" onclick="toggleSound()" title="Efek Suara" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-100 border-2 border-sky-400 text-sky-700 flex items-center justify-center font-bold hover:bg-sky-200 transition">
+          <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+        </button>
+
+        <!-- Tombol Guru / Rekap Nilai Excel -->
+        <button onclick="openTeacherModal()" title="Menu Rekap Nilai Guru" class="btn-bouncy bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-2 sm:px-4 sm:py-2 rounded-2xl border-2 border-emerald-700 text-xs sm:text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-file-excel text-base text-emerald-200"></i>
+          <span class="hidden md:inline">Data Nilai</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER BERGANTI HALAMAN -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-center">
+
+    <!-- ========================================== -->
+    <!-- HALAMAN 1: LOGIN MANUAL SISWA             -->
+    <!-- ========================================== -->
+    <section id="screenLogin" class="w-full max-w-xl mx-auto bg-white/95 rounded-3xl p-6 sm:p-10 shadow-2xl border-4 border-amber-300 relative overflow-hidden transition-all duration-300">
+      <div class="absolute -right-10 -top-10 w-36 h-36 bg-amber-200/50 rounded-full blur-xl pointer-events-none"></div>
+      <div class="absolute -left-10 -bottom-10 w-36 h-36 bg-red-200/50 rounded-full blur-xl pointer-events-none"></div>
+
+      <!-- Header Kartu Sambutan -->
+      <div class="text-center mb-6">
+        <div class="inline-block p-4 bg-red-50 rounded-full border-4 border-red-200 shadow-inner mb-3">
+          <span class="text-5xl sm:text-6xl animate-bounce inline-block">🦅</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-red-600">Halo Sahabat Cilik!</h2>
+        <p class="text-slate-600 text-sm sm:text-base font-reading mt-1">Ayo belajar mengenal 5 Lambang Pancasila dengan cara yang seru dan asyik!</p>
+      </div>
+
+      <!-- Form Input Manual Nama & Kelas -->
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-slate-700 font-bold mb-1.5 text-base sm:text-lg flex items-center gap-2">
+            <i class="fa-solid fa-user-pen text-amber-500"></i>
+            Nama Lengkap Kamu:
+          </label>
+          <input type="text" id="inputStudentName" required placeholder="Contoh: Siti Rahmawati"
+                 class="w-full text-base sm:text-lg font-bold px-5 py-3.5 rounded-2xl border-3 border-amber-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition bg-amber-50/40 text-slate-800 placeholder-slate-400">
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-bold mb-1.5 text-base sm:text-lg flex items-center gap-2">
+            <i class="fa-solid fa-school text-sky-500"></i>
+            Pilih atau Tulis Kelas:
+          </label>
+          <div class="grid grid-cols-4 gap-2 mb-2">
+            <button type="button" onclick="selectQuickClass('1A')" class="btnQuickClass py-2 rounded-xl font-bold border-2 border-sky-300 bg-sky-50 hover:bg-sky-200 text-sky-800 text-sm transition">1A</button>
+            <button type="button" onclick="selectQuickClass('1B')" class="btnQuickClass py-2 rounded-xl font-bold border-2 border-sky-300 bg-sky-50 hover:bg-sky-200 text-sky-800 text-sm transition">1B</button>
+            <button type="button" onclick="selectQuickClass('1C')" class="btnQuickClass py-2 rounded-xl font-bold border-2 border-sky-300 bg-sky-50 hover:bg-sky-200 text-sky-800 text-sm transition">1C</button>
+            <button type="button" onclick="selectQuickClass('1D')" class="btnQuickClass py-2 rounded-xl font-bold border-2 border-sky-300 bg-sky-50 hover:bg-sky-200 text-sky-800 text-sm transition">1D</button>
+          </div>
+          <input type="text" id="inputStudentClass" required placeholder="Ketik Kelas (Contoh: 1A / Kelas 1)"
+                 class="w-full text-base sm:text-lg font-bold px-5 py-3 rounded-2xl border-3 border-sky-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition bg-sky-50/40 text-slate-800">
+        </div>
+
+        <!-- Tombol Mulai Petualangan -->
+        <button type="submit" class="btn-bouncy w-full py-4 mt-4 bg-gradient-to-r from-red-500 via-rose-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white text-lg sm:text-xl font-extrabold rounded-2xl border-3 border-amber-600 flex items-center justify-center gap-3 shadow-lg">
+          <span>Mulai Belajar Sekarang</span>
+          <i class="fa-solid fa-circle-arrow-right text-2xl animate-pulse"></i>
+        </button>
+      </form>
+
+      <!-- Catatan Informasi untuk Guru -->
+      <div class="mt-6 text-center border-t-2 border-slate-100 pt-4">
+        <p class="text-xs text-slate-500 font-reading">
+          <i class="fa-solid fa-chalkboard-user text-amber-500 mr-1"></i>
+          Untuk Guru SD: Hasil belajar siswa tersimpan otomatis dan bisa diunduh ke Excel (.xlsx).
+        </p>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- HALAMAN 2: VIDEO PENDEK & MATERI SIMBOL   -->
+    <!-- ========================================== -->
+    <section id="screenVideo" class="hidden w-full max-w-4xl mx-auto space-y-5 animate-fadeIn">
+      <!-- Banner Petunjuk Belajar -->
+      <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 text-white p-4 sm:p-5 rounded-3xl shadow-lg border-4 border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <div>
+          <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Tahap 1: Tonton Materi</span>
+          <h2 class="text-xl sm:text-2xl font-black mt-1">Mengenal 5 Simbol Lambang Garuda Pancasila</h2>
+          <p class="text-amber-100 text-xs sm:text-sm font-reading">Perhatikan video dan kartu simbol di bawah ini sebelum bermain kuis menjodohkan ya!</p>
+        </div>
+        <button onclick="speakInstruction('Perhatikan video pembelajaran lambang Pancasila berikut ini. Setelah menonton, klik tombol hijau untuk memulai game kuis!')" 
+                class="btn-bouncy bg-white text-red-600 font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2 text-sm shadow hover:bg-amber-50 transition shrink-0">
+          <i class="fa-solid fa-volume-high text-amber-500"></i>
+          <span>Dengarkan Suara Guru</span>
+        </button>
+      </div>
+
+      <!-- Container Video Interaktif -->
+      <div class="bg-white p-3 sm:p-5 rounded-3xl shadow-xl border-4 border-sky-300">
+        <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center">
+          <!-- Embed Video Edukasi Pancasila Kelas 1 SD Resmi/Aman YouTube -->
+          <iframe id="videoIframe" 
+                  class="w-full h-full"
+                  src="https://www.youtube-nocookie.com/embed/g2J036W3f5I?si=pancasila_sd_kelas1&rel=0&modestbranding=1" 
+                  title="Video Mengenal Simbol Lambang Garuda Pancasila Kelas 1 SD" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+        <p class="text-center text-xs text-slate-500 mt-2 font-reading">
+          *Jika video terkendala koneksi sekolah, kamu bisa langsung mempelajari kartu ringkasan 5 lambang di bawah ini.
+        </p>
+      </div>
+
+      <!-- Kartu Ringkasan Cepat 5 Sila dengan Gambar Asli (Touch-friendly untuk Papan Digital) -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+        <!-- Sila 1: Bintang Emas -->
+        <div onclick="readSilaOverview(1)" class="bg-slate-900 text-amber-300 p-2.5 rounded-2xl border-3 border-amber-400 text-center cursor-pointer hover:scale-105 transition shadow flex flex-col items-center">
+          <div class="w-12 h-12 rounded-lg overflow-hidden border border-amber-400/50 mb-1">
+            <svg viewBox="0 0 200 200" class="w-full h-full">
+              <rect width="200" height="200" fill="#111111"/>
+              <rect x="5" y="5" width="190" height="190" fill="none" stroke="#2e2d2e" stroke-width="10"/>
+              <!-- Bintang Segi Lima Faceted Sila 1 -->
+              <polygon points="100,106 100,34 83.84,83.75" fill="#e8a834"/>
+              <polygon points="100,106 100,34 116.16,83.75" fill="#fee573"/>
+              <polygon points="100,106 168.48,83.75 116.16,83.75" fill="#df9c2c"/>
+              <polygon points="100,106 168.48,83.75 126.15,114.5" fill="#fee267"/>
+              <polygon points="100,106 142.32,164.25 126.15,114.5" fill="#e6a331"/>
+              <polygon points="100,106 142.32,164.25 100,133.5" fill="#feea7a"/>
+              <polygon points="100,106 57.68,164.25 100,133.5" fill="#df9c2c"/>
+              <polygon points="100,106 57.68,164.25 73.85,114.5" fill="#feea7a"/>
+              <polygon points="100,106 31.52,83.75 73.85,114.5" fill="#df9c2c"/>
+              <polygon points="100,106 31.52,83.75 83.84,83.75" fill="#fee267"/>
+            </svg>
+          </div>
+          <div class="text-xs font-bold text-white">Sila 1: Bintang</div>
+          <div class="text-[10px] text-amber-300 font-reading leading-tight mt-0.5">Ketuhanan YME</div>
+        </div>
+
+        <!-- Sila 2: Rantai Emas -->
+        <div onclick="readSilaOverview(2)" class="bg-red-600 text-amber-300 p-2.5 rounded-2xl border-3 border-amber-300 text-center cursor-pointer hover:scale-105 transition shadow flex flex-col items-center">
+          <div class="w-12 h-12 rounded-lg overflow-hidden border border-red-300 mb-1">
+            <svg viewBox="0 0 200 200" class="w-full h-full">
+              <rect width="200" height="200" fill="#eb1c24"/>
+              <rect x="5" y="5" width="190" height="190" fill="none" stroke="#901416" stroke-width="10"/>
+              <g transform="translate(100,100) rotate(-40)">
+                <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#9e5a00" stroke-width="20" stroke-dasharray="18, 6"/>
+                <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#ffde00" stroke-width="15" stroke-dasharray="18, 6"/>
+                <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#fff176" stroke-width="6" stroke-dasharray="8, 16"/>
+              </g>
+            </svg>
+          </div>
+          <div class="text-xs font-bold text-white">Sila 2: Rantai</div>
+          <div class="text-[10px] text-amber-200 font-reading leading-tight mt-0.5">Kemanusiaan Beradab</div>
+        </div>
+
+        <!-- Sila 3: Pohon Beringin -->
+        <div onclick="readSilaOverview(3)" class="bg-emerald-50 text-emerald-800 p-2.5 rounded-2xl border-3 border-emerald-400 text-center cursor-pointer hover:scale-105 transition shadow flex flex-col items-center">
+          <div class="w-12 h-12 rounded-lg overflow-hidden border border-slate-400 mb-1 bg-white">
+            <svg viewBox="0 0 200 200" class="w-full h-full">
+              <rect width="200" height="200" fill="#ffffff"/>
+              <rect x="6" y="6" width="188" height="188" fill="none" stroke="#5f717e" stroke-width="12"/>
+              <path d="M82 155 Q70 152 64 158 L146 158 Q138 152 126 155 L118 116 L90 116 Z" fill="#8b530c"/>
+              <path d="M42 108 C36 70 70 38 102 38 C135 38 168 70 162 108 C158 126 142 128 138 116 C134 130 120 128 116 116 C102 124 98 124 88 116 C84 130 70 128 66 116 C62 128 46 126 42 108 Z" fill="#15733b"/>
+            </svg>
+          </div>
+          <div class="text-xs font-bold text-emerald-900">Sila 3: Beringin</div>
+          <div class="text-[10px] text-emerald-700 font-reading leading-tight mt-0.5">Persatuan Indonesia</div>
+        </div>
+
+        <!-- Sila 4: Kepala Banteng -->
+        <div onclick="readSilaOverview(4)" class="bg-red-700 text-white p-2.5 rounded-2xl border-3 border-red-900 text-center cursor-pointer hover:scale-105 transition shadow flex flex-col items-center">
+          <div class="w-12 h-12 rounded-lg overflow-hidden border border-red-900 mb-1">
+            <svg viewBox="0 0 200 200" class="w-full h-full">
+              <rect width="200" height="200" fill="#eb1c24"/>
+              <rect x="5" y="5" width="190" height="190" fill="none" stroke="#880f12" stroke-width="10"/>
+              <path d="M52 44 C42 85 64 108 80 115 C74 95 66 68 56 46 Z" fill="#ffffff"/>
+              <path d="M148 44 C158 85 136 108 120 115 C126 95 134 68 144 46 Z" fill="#ffffff"/>
+              <path d="M50 42 C40 88 68 112 82 116 C72 96 64 68 52 44 Z" fill="#000000"/>
+              <path d="M150 42 C160 88 132 112 118 116 C128 96 136 68 148 44 Z" fill="#000000"/>
+              <path d="M72 100 C72 92 84 84 100 84 C116 84 128 92 128 100 C146 118 132 152 120 170 C110 176 90 176 80 170 C68 152 54 118 72 100 Z" fill="#000000"/>
+            </svg>
+          </div>
+          <div class="text-xs font-bold text-white">Sila 4: Banteng</div>
+          <div class="text-[10px] text-red-200 font-reading leading-tight mt-0.5">Kerakyatan Musyawarah</div>
+        </div>
+
+        <!-- Sila 5: Padi dan Kapas -->
+        <div onclick="readSilaOverview(5)" class="col-span-2 sm:col-span-1 bg-amber-50 text-amber-900 p-2.5 rounded-2xl border-3 border-amber-400 text-center cursor-pointer hover:scale-105 transition shadow flex flex-col items-center">
+          <div class="w-12 h-12 rounded-lg overflow-hidden border border-amber-300 mb-1 bg-white">
+            <svg viewBox="0 0 200 200" class="w-full h-full">
+              <rect width="200" height="200" fill="#ffffff"/>
+              <path d="M92 170 Q48 110 52 38" stroke="#8b520e" stroke-width="3" fill="none"/>
+              <circle cx="135" cy="50" r="11" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+              <path d="M125 58 C135 48 145 48 145 58 Z" fill="#00a82b"/>
+              <circle cx="140" cy="80" r="11" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+              <path d="M130 88 C140 78 150 78 150 88 Z" fill="#00a82b"/>
+            </svg>
+          </div>
+          <div class="text-xs font-bold text-amber-900">Sila 5: Padi & Kapas</div>
+          <div class="text-[10px] text-amber-700 font-reading leading-tight mt-0.5">Keadilan Sosial</div>
+        </div>
+      </div>
+
+      <!-- Tombol Aksi Menuju Game -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+        <button onclick="goToScreen('screenLogin')" class="btn-bouncy w-full sm:w-auto px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl border-2 border-slate-400 text-base flex items-center justify-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Ubah Nama / Kelas</span>
+        </button>
+
+        <button onclick="startGame()" class="btn-bouncy w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-lg sm:text-xl rounded-2xl border-3 border-emerald-700 shadow-xl flex items-center justify-center gap-3">
+          <span>Siap Main Game Menjodohkan!</span>
+          <i class="fa-solid fa-gamepad text-2xl animate-bounce"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- HALAMAN 3: GAME MENJODOHKAN (5 SOAL SILA)  -->
+    <!-- ========================================== -->
+    <section id="screenGame" class="hidden w-full max-w-5xl mx-auto space-y-4 animate-fadeIn relative">
+      
+      <!-- Bar Petunjuk & Skor Sementara Game -->
+      <div class="bg-white/95 rounded-2xl p-4 shadow-md border-3 border-amber-300 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="w-12 h-12 rounded-2xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-2xl">🎮</span>
+          <div>
+            <h3 class="font-extrabold text-lg sm:text-xl text-slate-800">Hubungkan Sila dengan Lambang yang Tepat!</h3>
+            <p class="text-xs sm:text-sm text-slate-500 font-reading">Sentuh satu teks Sila di kiri, lalu sentuh lambang gambar yang cocok di kanan.</p>
+          </div>
+        </div>
+
+        <!-- Tombol Bacakan Instruksi Soal -->
+        <button onclick="speakInstruction('Sentuh kotak nama Sila di sebelah kiri, kemudian sentuh gambar lambang yang cocok di sebelah kanan!')"
+                class="px-3.5 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-400 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-bullhorn text-amber-600"></i>
+          <span>Dengarkan Soal</span>
+        </button>
+      </div>
+
+      <!-- AREA PERMAINAN MENJODOHKAN DENGAN KANVAS PENGHUBUNG -->
+      <div id="gamePlayArea" class="relative bg-white/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-sky-400 min-h-[500px]">
+        <!-- Canvas untuk melukis garis interaktif -->
+        <canvas id="connectingCanvas"></canvas>
+
+        <div class="grid grid-cols-2 gap-4 sm:gap-12 relative z-20">
+          
+          <!-- KOLOM KIRI: TEKS SILA 1 SAMPAI 5 -->
+          <div class="space-y-3 sm:space-y-4 flex flex-col justify-around" id="leftSilaColumn">
+            <!-- Di-generate secara dinamis oleh JavaScript -->
+          </div>
+
+          <!-- KOLOM KANAN: GAMBAR LAMBANG (DIACAK) -->
+          <div class="space-y-3 sm:space-y-4 flex flex-col justify-around" id="rightSymbolColumn">
+            <!-- Di-generate secara dinamis oleh JavaScript -->
+          </div>
+
+        </div>
+      </div>
+
+      <!-- KONTROL BAWAH: RESET JODOH & PERIKSA JAWABAN -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        <button onclick="resetCurrentMatches()" class="btn-bouncy w-full sm:w-auto px-5 py-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-2xl border-2 border-rose-300 text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-arrow-rotate-left"></i>
+          <span>Ulangi Pasangan Garis</span>
+        </button>
+
+        <div class="text-center font-bold text-slate-600 text-sm">
+          Terhubung: <span id="matchCounter" class="text-red-600 text-lg">0</span> dari 5 Sila
+        </div>
+
+        <button id="btnCheckAnswer" onclick="submitAndEvaluateQuiz()" class="btn-bouncy w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-base sm:text-lg rounded-2xl border-3 border-emerald-700 shadow-lg flex items-center justify-center gap-2">
+          <span>Periksa & Kumpulkan Jawaban</span>
+          <i class="fa-solid fa-circle-check text-xl"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- HALAMAN 4: HASIL NILAI & SELEBRASI        -->
+    <!-- ========================================== -->
+    <section id="screenResult" class="hidden w-full max-w-2xl mx-auto bg-white/95 rounded-3xl p-6 sm:p-10 shadow-2xl border-4 border-amber-300 text-center animate-fadeIn relative">
+      <div class="text-6xl sm:text-7xl mb-2 star-animate" id="trophyIcon">🏆</div>
+      
+      <span class="bg-amber-100 text-amber-800 border border-amber-300 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full inline-block mb-3">
+        Laporan Hasil Bermain Siswa
+      </span>
+
+      <h2 id="resultGreeting" class="text-2xl sm:text-3xl font-black text-slate-800">Hebat Sekali, Siti!</h2>
+      <p id="resultFeedback" class="text-slate-600 font-reading text-sm sm:text-base mt-1">Kamu telah menyelesaikan tantangan menjodohkan lambang Pancasila.</p>
+
+      <!-- Kotak Skor Raksasa -->
+      <div class="my-6 p-5 sm:p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-3 border-amber-300 shadow-inner flex flex-col items-center">
+        <span class="text-xs sm:text-sm font-bold text-amber-700 uppercase tracking-widest">Nilai Akhir Kamu</span>
+        <div class="text-6xl sm:text-7xl font-black text-red-600 my-1" id="scoreDisplay">100</div>
+        
+        <!-- Bintang Penilaian -->
+        <div class="flex gap-2 text-3xl sm:text-4xl text-amber-400 mt-2" id="starContainer">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+        </div>
+
+        <div class="mt-3 text-xs sm:text-sm text-slate-600 font-reading font-semibold" id="correctSummaryText">
+          Jawaban Benar: 5 dari 5 Soal
+        </div>
+      </div>
+
+      <!-- Keterangan Otomatis Tersimpan -->
+      <div class="bg-emerald-50 border-2 border-emerald-300 text-emerald-800 rounded-2xl p-3 mb-6 text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+        <span>Nilai telah <strong>disimpan secara otomatis</strong> ke memori kelas Guru.</span>
+      </div>
+
+      <!-- Tombol Aksi: Unduh Excel, Main Lagi, Menu Awal -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="downloadStudentExcelResult()" class="btn-bouncy py-3.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl border-2 border-emerald-700 flex items-center justify-center gap-2 text-sm sm:text-base">
+          <i class="fa-solid fa-file-excel text-xl"></i>
+          <span>Unduh Hasil (Excel .xlsx)</span>
+        </button>
+
+        <button onclick="playAgain()" class="btn-bouncy py-3.5 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl border-2 border-sky-700 flex items-center justify-center gap-2 text-sm sm:text-base">
+          <i class="fa-solid fa-rotate-right text-lg"></i>
+          <span>Main Sekali Lagi</span>
+        </button>
+
+        <button onclick="confirmGoHome()" class="btn-bouncy sm:col-span-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl border-2 border-slate-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+          <i class="fa-solid fa-house"></i>
+          <span>Kembali ke Menu Awal</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL KHUSUS GURU: REKAPITULASI KELAS & UNDUH EXCEL (.XLSX) -->
+  <!-- ======================================================== -->
+  <div id="modalTeacher" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl rounded-3xl p-5 sm:p-7 shadow-2xl border-4 border-emerald-400 max-h-[90vh] flex flex-col">
+      
+      <!-- Header Modal Guru -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">📊</span>
+          <div>
+            <h3 class="font-extrabold text-lg sm:text-xl text-slate-800">Rekap Nilai Siswa (Guru Kelas 1)</h3>
+            <p class="text-xs text-slate-500 font-reading">Data tersimpan otomatis setiap siswa menyelesaikan kuis.</p>
+          </div>
+        </div>
+        <button onclick="closeTeacherModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-lg font-bold">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Filter dan Ringkasan Nilai -->
+      <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div class="text-xs sm:text-sm font-semibold text-slate-600">
+          Total Siswa Menyelesaikan: <span id="teacherTotalStudents" class="font-bold text-emerald-600">0</span> anak
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="exportAllStudentsExcel()" class="btn-bouncy px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm border-2 border-emerald-800 flex items-center gap-2">
+            <i class="fa-solid fa-download"></i>
+            <span>Unduh Seluruh Kelas (.xlsx)</span>
+          </button>
+          <button onclick="confirmClearAllData()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-xs border border-rose-200" title="Hapus Riwayat">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabel Data Siswa -->
+      <div class="flex-1 overflow-y-auto border-2 border-slate-200 rounded-2xl">
+        <table class="w-full text-left text-xs sm:text-sm">
+          <thead class="bg-emerald-50 text-emerald-900 font-extrabold sticky top-0 border-b border-slate-200">
+            <tr>
+              <th class="p-3">No</th>
+              <th class="p-3">Nama Siswa</th>
+              <th class="p-3">Kelas</th>
+              <th class="p-3">Skor</th>
+              <th class="p-3">Benar</th>
+              <th class="p-3">Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="teacherTableBody" class="divide-y divide-slate-100 font-reading">
+            <!-- Diisi otomatis oleh JavaScript -->
+          </tbody>
+        </table>
+        <div id="teacherEmptyState" class="p-8 text-center text-slate-400 font-reading hidden">
+          <i class="fa-solid fa-inbox text-4xl mb-2 text-slate-300"></i>
+          <p>Belum ada data pengerjaan siswa.</p>
+        </div>
+      </div>
+
+      <!-- Tombol Tutup -->
+      <div class="pt-4 text-right">
+        <button onclick="closeTeacherModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-sm">
+          Tutup Menu Guru
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL DIALOG / PESAN RAMAH ANAK (NO ALERT) -->
+  <!-- ========================================== -->
+  <div id="customDialog" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-4 border-amber-300 text-center animate-fadeIn">
+      <div id="dialogIcon" class="text-5xl mb-3">⭐</div>
+      <h3 id="dialogTitle" class="text-xl font-extrabold text-slate-800">Perhatian</h3>
+      <p id="dialogMessage" class="text-slate-600 font-reading text-sm mt-2 mb-6">Pesan dialog interaktif.</p>
+      
+      <div id="dialogActions" class="flex gap-2 justify-center">
+        <button id="dialogBtnOk" onclick="closeCustomDialog()" class="btn-bouncy px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl border-2 border-amber-700 text-sm">
+          Mengerti
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER RAMAH ANAK -->
+  <footer class="w-full bg-white/70 border-t border-slate-200 py-2.5 px-4 text-center text-xs text-slate-500 font-reading">
+    <p>Media Pembelajaran Interaktif PPKn Kelas 1 SD • Mengenal Lambang Garuda Pancasila • Mendukung Papan Interaktif Digital & Tablet</p>
+  </footer>
+
+  <!-- ======================================================== -->
+  <!-- DEFINISI GRAFIS VEKTOR ASLI SIMBOL PANCASILA (SVG RESMI) -->
+  <!-- ======================================================== -->
+  <script>
+    /*
+      Vektor SVG resolusi tinggi yang mereplikasi simbol Pancasila sesuai gambar:
+      1. Sila 1: Bintang Emas Faceted di atas Kotak Hitam berbingkai abu-abu gelap
+      2. Sila 2: Gelang Rantai Emas (lingkaran & persegi) berlatar Merah berbingkai merah tua
+      3. Sila 3: Pohon Beringin berdaun rindang, akar gantung & totol batang berlatar Putih bingkai slate
+      4. Sila 4: Kepala Banteng Tegas dengan tanduk berarsir putih di latar Merah bingkai marun
+      5. Sila 5: Untaian Padi Emas berpasangan dan 5 Kuntum Kapas Hijau-Putih di latar Putih
+    */
+    const PANCASILA_ASSETS = {
+      1: {
+        id: 1,
+        name: "Bintang Emas",
+        silaText: "Sila Ke-1",
+        soundText: "Sila Pertama: Ketuhanan Yang Maha Esa. Lambangnya adalah Bintang Emas.",
+        fullSila: "Ketuhanan Yang Maha Esa",
+        colorBg: "bg-slate-900",
+        borderColor: "border-amber-400",
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+            <!-- Latar Belakang Hitam dengan Bingkai Gelap Persis Gambar Asli -->
+            <rect width="200" height="200" rx="12" fill="#111111"/>
+            <rect x="5" y="5" width="190" height="190" rx="8" fill="none" stroke="#2e2d2e" stroke-width="10"/>
+            
+            <!-- Bintang Emas Bersudut 5 Faceted (Belah Dua Warna Terang-Gelap Khas Garuda) -->
+            <g id="starGroup">
+              <!-- Ujung Atas (Top) -->
+              <polygon points="100,106 100,34 83.84,83.75" fill="#e8a834"/>
+              <polygon points="100,106 100,34 116.16,83.75" fill="#fee573"/>
+              
+              <!-- Ujung Kanan Atas -->
+              <polygon points="100,106 168.48,83.75 116.16,83.75" fill="#df9c2c"/>
+              <polygon points="100,106 168.48,83.75 126.15,114.5" fill="#fee267"/>
+              
+              <!-- Ujung Kanan Bawah -->
+              <polygon points="100,106 142.32,164.25 126.15,114.5" fill="#e6a331"/>
+              <polygon points="100,106 142.32,164.25 100,133.5" fill="#feea7a"/>
+              
+              <!-- Ujung Kiri Bawah -->
+              <polygon points="100,106 57.68,164.25 100,133.5" fill="#df9c2c"/>
+              <polygon points="100,106 57.68,164.25 73.85,114.5" fill="#feea7a"/>
+              
+              <!-- Ujung Kiri Atas -->
+              <polygon points="100,106 31.52,83.75 73.85,114.5" fill="#df9c2c"/>
+              <polygon points="100,106 31.52,83.75 83.84,83.75" fill="#fee267"/>
+            </g>
+          </svg>
+        `
+      },
+      2: {
+        id: 2,
+        name: "Rantai Emas",
+        silaText: "Sila Ke-2",
+        soundText: "Sila Kedua: Kemanusiaan yang Adil dan Beradab. Lambangnya adalah Rantai Emas.",
+        fullSila: "Kemanusiaan yang Adil dan Beradab",
+        colorBg: "bg-red-600",
+        borderColor: "border-red-400",
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+            <!-- Latar Belakang Merah Bersih dengan Bingkai Merah Tua Sesuai Gambar -->
+            <rect width="200" height="200" rx="12" fill="#eb1c24"/>
+            <rect x="5" y="5" width="190" height="190" rx="8" fill="none" stroke="#901416" stroke-width="10"/>
+
+            <!-- Mata Rantai Emas Melingkar Miring dengan sambungan persegi dan lingkaran -->
+            <g transform="translate(100,100) rotate(-42)">
+              <!-- Lapisan Bayangan Kontur Rantai Emas -->
+              <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#9e5a00" stroke-width="20" stroke-dasharray="16, 5" stroke-linecap="round"/>
+              <!-- Lapisan Badan Rantai Kuning Emas -->
+              <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#ffde00" stroke-width="15" stroke-dasharray="16, 5" stroke-linecap="round"/>
+              <!-- Kilau Cahaya Keemasan Rantai -->
+              <ellipse cx="0" cy="0" rx="72" ry="36" fill="none" stroke="#fff59d" stroke-width="5" stroke-dasharray="8, 13" stroke-linecap="round"/>
+              
+              <!-- Lubang Sambungan Mata Rantai Tengah -->
+              <ellipse cx="0" cy="0" rx="58" ry="24" fill="#eb1c24"/>
+              
+              <!-- Cincin Mata Rantai Tambahan Pembentuk Detail Lingkaran & Persegi -->
+              <g fill="#ffde00" stroke="#b26a00" stroke-width="3">
+                <rect x="-10" y="-44" width="20" height="16" rx="4" />
+                <circle cx="28" cy="-34" r="9" fill="none" stroke="#ffde00" stroke-width="7" />
+                <rect x="52" y="-18" width="18" height="18" rx="4" />
+                <circle cx="68" cy="10" r="9" fill="none" stroke="#ffde00" stroke-width="7" />
+                <rect x="42" y="26" width="18" height="18" rx="4" />
+                <circle cx="10" cy="36" r="9" fill="none" stroke="#ffde00" stroke-width="7" />
+                <rect x="-30" y="28" width="18" height="18" rx="4" />
+                <circle cx="-58" cy="12" r="9" fill="none" stroke="#ffde00" stroke-width="7" />
+                <rect x="-70" y="-16" width="18" height="18" rx="4" />
+                <circle cx="-42" cy="-32" r="9" fill="none" stroke="#ffde00" stroke-width="7" />
+              </g>
+            </g>
+          </svg>
+        `
+      },
+      3: {
+        id: 3,
+        name: "Pohon Beringin",
+        silaText: "Sila Ke-3",
+        soundText: "Sila Ketiga: Persatuan Indonesia. Lambangnya adalah Pohon Beringin.",
+        fullSila: "Persatuan Indonesia",
+        colorBg: "bg-white",
+        borderColor: "border-slate-400",
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+            <!-- Latar Belakang Putih dengan Bingkai Abu-Abu Kebiruan Sesuai Gambar -->
+            <rect width="200" height="200" rx="12" fill="#ffffff"/>
+            <rect x="6" y="6" width="188" height="188" rx="8" fill="none" stroke="#5f717e" stroke-width="12"/>
+
+            <!-- Batang Pohon Cokelat Kuat dengan Totol Kuning & Akar Menjalar -->
+            <path d="M82 155 Q68 152 64 158 L148 158 Q140 152 126 155 L119 116 L89 116 Z" fill="#8b530c"/>
+            <!-- Totol Kuning/Cokelat Muda Khas Pada Batang -->
+            <ellipse cx="104" cy="122" rx="4.5" ry="7.5" fill="#e8b444"/>
+            <ellipse cx="104" cy="138" rx="3.5" ry="6.5" fill="#e8b444"/>
+            <circle cx="95" cy="146" r="4.5" fill="#e8b444"/>
+
+            <!-- Kubah Daun Rindang Hijau Tua -->
+            <path d="M42 108 C36 70 70 38 102 38 C135 38 168 70 162 108 C158 126 142 128 138 116 C134 130 120 128 116 116 C102 124 98 124 88 116 C84 130 70 128 66 116 C62 128 46 126 42 108 Z" fill="#15733b"/>
+
+            <!-- Pola Kamuflase Hijau Terang Khas Gambar Pohon Beringin -->
+            <path d="M56 82 C56 58 82 44 102 44 C122 44 148 58 148 82 C148 94 136 88 126 84 C116 78 112 88 98 84 C84 80 72 90 64 88 C58 86 56 84 56 82 Z" fill="#2bb960"/>
+            <path d="M88 56 C102 52 122 56 126 66 C116 72 104 68 96 72 C88 74 82 66 88 56 Z" fill="#3dd373"/>
+            <ellipse cx="152" cy="85" rx="5" ry="8" fill="#3dd373" transform="rotate(15 152 85)"/>
+
+            <!-- Sulur-Sulur Akar Gantung Runcing Khas Beringin di Bagian Bawah Daun -->
+            <g fill="#15733b">
+              <!-- Akar gantung kiri -->
+              <polygon points="44,108 50,132 47,108"/>
+              <polygon points="56,112 62,135 59,112"/>
+              <polygon points="70,116 75,130 73,116"/>
+              <polygon points="80,116 84,128 82,116"/>
+              <!-- Akar gantung kanan -->
+              <polygon points="124,116 126,128 128,116"/>
+              <polygon points="134,116 137,130 139,116"/>
+              <polygon points="146,112 150,136 148,112"/>
+              <polygon points="156,108 160,133 158,108"/>
+            </g>
+          </svg>
+        `
+      },
+      4: {
+        id: 4,
+        name: "Kepala Banteng",
+        silaText: "Sila Ke-4",
+        soundText: "Sila Keempat: Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan. Lambangnya adalah Kepala Banteng.",
+        fullSila: "Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan",
+        colorBg: "bg-red-600",
+        borderColor: "border-red-500",
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+            <!-- Latar Belakang Merah dengan Bingkai Merah Marun Sesuai Gambar -->
+            <rect width="200" height="200" rx="12" fill="#eb1c24"/>
+            <rect x="5" y="5" width="190" height="190" rx="8" fill="none" stroke="#880f12" stroke-width="10"/>
+
+            <!-- Tanduk Melengkung Gagah dengan Sorot Putih di Bagian Dalam Tanduk -->
+            <!-- Sayap Putih Bagian Dalam Tanduk Kiri -->
+            <path d="M52 44 C42 85 64 108 80 115 C74 95 66 68 56 46 Z" fill="#ffffff"/>
+            <!-- Sayap Putih Bagian Dalam Tanduk Kanan -->
+            <path d="M148 44 C158 85 136 108 120 115 C126 95 134 68 144 46 Z" fill="#ffffff"/>
+
+            <!-- Tanduk Hitam Melengkung Runcing Kiri & Kanan -->
+            <path d="M50 42 C40 88 68 112 82 116 C72 96 64 68 52 44 Z" fill="#000000"/>
+            <path d="M150 42 C160 88 132 112 118 116 C128 96 136 68 148 44 Z" fill="#000000"/>
+
+            <!-- Siluet Kepala Banteng Hitam Pekat -->
+            <path d="M72 100 C72 92 84 84 100 84 C116 84 128 92 128 100 C148 116 134 152 120 170 C110 176 90 176 80 170 C66 152 52 116 72 100 Z" fill="#000000"/>
+
+            <!-- Telinga Kiri dan Kanan Banteng -->
+            <polygon points="56,114 74,104 68,122" fill="#000000"/>
+            <polygon points="144,114 126,104 132,122" fill="#000000"/>
+
+            <!-- Aksentuasi Pola Putih Wajah Banteng (Sesuai Gambar Persis) -->
+            <!-- Coretan Putih Dahi & Hidung Kiri -->
+            <path d="M60 112 C72 110 80 120 84 126 C90 134 94 146 90 156 C86 148 84 138 78 132 C74 126 66 122 60 112 Z" fill="#ffffff"/>
+            <path d="M88 142 L94 158 L88 160 Z" fill="#ffffff"/>
+            <!-- Mata Kanan Miring Putih -->
+            <polygon points="112,122 120,126 114,130 110,126" fill="#ffffff"/>
+            <!-- Moncong Bawah Putih -->
+            <path d="M102 162 Q108 156 112 166 Q106 168 102 162 Z" fill="#ffffff"/>
+          </svg>
+        `
+      },
+      5: {
+        id: 5,
+        name: "Padi dan Kapas",
+        silaText: "Sila Ke-5",
+        soundText: "Sila Kelima: Keadilan Sosial bagi Seluruh Rakyat Indonesia. Lambangnya adalah Padi dan Kapas.",
+        fullSila: "Keadilan Sosial bagi Seluruh Rakyat Indonesia",
+        colorBg: "bg-white",
+        borderColor: "border-amber-400",
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+            <!-- Latar Belakang Putih Bersih Sesuai Gambar -->
+            <rect width="200" height="200" rx="12" fill="#ffffff"/>
+
+            <!-- Batang Utama Padi dan Kapas Bersatu di Bawah -->
+            <path d="M148 168 Q182 178 190 172" stroke="#8b520e" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+            <path d="M96 164 Q146 172 162 170" stroke="#8b520e" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+            <!-- 1. TANGKAI PADI EMAS MELENGKUNG DI KIRI (Dengan Daun Butir Emas) -->
+            <g>
+              <!-- Tangkai Lengkung Padi -->
+              <path d="M152 168 Q65 130 32 30" stroke="#8b520e" stroke-width="3" fill="none"/>
+
+              <!-- Butir-butir Padi Kuning Emas dengan Garis Bayang Cokelat -->
+              <g fill="#f5c039" stroke="#8b520e" stroke-width="2">
+                <!-- Pucuk Padi -->
+                <path d="M32 28 C26 40 32 50 32 50 C32 50 42 40 32 28 Z"/>
+                <!-- Pasang 1 -->
+                <path d="M30 46 C16 54 18 68 18 68 C18 68 32 64 30 46 Z"/>
+                <path d="M34 44 C44 54 42 66 42 66 C42 66 32 62 34 44 Z"/>
+                <!-- Pasang 2 -->
+                <path d="M22 66 C10 74 12 88 12 88 C12 88 26 84 22 66 Z"/>
+                <path d="M38 64 C48 74 46 88 46 88 C46 88 34 82 38 64 Z"/>
+                <!-- Pasang 3 -->
+                <path d="M22 88 C14 98 18 110 18 110 C18 110 30 104 22 88 Z"/>
+                <path d="M46 86 C58 98 56 112 56 112 C56 112 42 104 46 86 Z"/>
+                <!-- Pasang 4 -->
+                <path d="M26 110 C20 120 28 132 28 132 C28 132 38 124 26 110 Z"/>
+                <path d="M54 110 C68 122 68 136 68 136 C68 136 52 126 54 110 Z"/>
+                <!-- Pasang 5 -->
+                <path d="M36 132 C34 144 44 154 44 154 C44 154 52 142 36 132 Z"/>
+                <path d="M66 134 C82 146 84 158 84 158 C84 158 66 148 66 134 Z"/>
+                <!-- Pasang 6 Bawah -->
+                <path d="M52 152 C54 162 66 168 66 168 C66 168 70 158 52 152 Z"/>
+                <path d="M84 154 C98 162 104 172 104 172 C104 172 88 164 84 154 Z"/>
+              </g>
+            </g>
+
+            <!-- 2. TANGKAI KAPAS DI KANAN: 5 KUNTUM BERDERET SERASI SESUAI GAMBAR -->
+            <g transform="translate(-10, -5)">
+              <!-- Tangkai Kapas Hijau Ramping -->
+              <path d="M196 148 L98 48" stroke="#000000" stroke-width="3" fill="none"/>
+
+              <!-- Kuntum Kapas 1 (Paling Atas) -->
+              <g transform="translate(98, 48)">
+                <circle cx="0" cy="0" r="14" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+                <path d="M-13 3 C-6 15 6 15 13 3 L10 13 L-1 16 L-10 13 Z" fill="#00a82b" stroke="#000000" stroke-width="2"/>
+              </g>
+
+              <!-- Kuntum Kapas 2 -->
+              <g transform="translate(118, 70)">
+                <circle cx="0" cy="0" r="14" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+                <path d="M-13 3 C-6 15 6 15 13 3 L10 13 L-1 16 L-10 13 Z" fill="#00a82b" stroke="#000000" stroke-width="2"/>
+              </g>
+
+              <!-- Kuntum Kapas 3 -->
+              <g transform="translate(138, 92)">
+                <circle cx="0" cy="0" r="14" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+                <path d="M-13 3 C-6 15 6 15 13 3 L10 13 L-1 16 L-10 13 Z" fill="#00a82b" stroke="#000000" stroke-width="2"/>
+              </g>
+
+              <!-- Kuntum Kapas 4 -->
+              <g transform="translate(158, 115)">
+                <circle cx="0" cy="0" r="14" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+                <path d="M-13 3 C-6 15 6 15 13 3 L10 13 L-1 16 L-10 13 Z" fill="#00a82b" stroke="#000000" stroke-width="2"/>
+              </g>
+
+              <!-- Kuntum Kapas 5 (Paling Bawah) -->
+              <g transform="translate(178, 138)">
+                <circle cx="0" cy="0" r="14" fill="#ffffff" stroke="#000000" stroke-width="2.5"/>
+                <path d="M-13 3 C-6 15 6 15 13 3 L10 13 L-1 16 L-10 13 Z" fill="#00a82b" stroke="#000000" stroke-width="2"/>
+                <!-- Tangkai Cabang Bawah -->
+                <path d="M0 16 L12 28" stroke="#000000" stroke-width="3" fill="none"/>
+              </g>
+            </g>
+          </svg>
+        `
+      }
+    };
+  </script>
+
+  <script>
+    /* ========================================================
+       SISTEM AUDIO SINTETIS (TONE.JS) & TEXT-TO-SPEECH
+       ======================================================== */
+    let isSoundMuted = false;
+    let synth = null;
+    let polySynth = null;
+
+    // Inisialisasi Tone.js setelah interaksi pertama pengguna
+    function initAudio() {
+      try {
+        if (!synth && window.Tone) {
+          Tone.start();
+          synth = new Tone.Synth({
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0.1, release: 0.5 }
+          }).toDestination();
+
+          polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+          polySynth.volume.value = -6;
+        }
+      } catch (e) {
+        console.warn("Tone.js audio context standby:", e);
+      }
+    }
+
+    // Suara ketukan kartu ceria
+    function playTapSound() {
+      if (isSoundMuted || !window.Tone) return;
+      initAudio();
+      try {
+        synth.triggerAttackRelease("C5", "16n");
+      } catch (e) {}
+    }
+
+    // Suara saat dua kartu berhasil dihubungkan
+    function playConnectSound() {
+      if (isSoundMuted || !window.Tone) return;
+      initAudio();
+      try {
+        synth.triggerAttackRelease("E5", "8n");
+        setTimeout(() => synth.triggerAttackRelease("G5", "8n"), 90);
+      } catch (e) {}
+    }
+
+    // Suara salah / tidak lengkap
+    function playWobbleSound() {
+      if (isSoundMuted || !window.Tone) return;
+      initAudio();
+      try {
+        synth.triggerAttackRelease("A3", "8n");
+        setTimeout(() => synth.triggerAttackRelease("F3", "8n"), 120);
+      } catch (e) {}
+    }
+
+    // Nada kado kemenangan (Fanfare riang)
+    function playVictoryFanfare() {
+      if (isSoundMuted || !window.Tone) return;
+      initAudio();
+      try {
+        const now = Tone.now();
+        polySynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+        polySynth.triggerAttackRelease(["E4", "G4", "B4"], "8n", now + 0.18);
+        polySynth.triggerAttackRelease(["G4", "C5", "E5"], "4n", now + 0.36);
+        polySynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.6);
+      } catch (e) {}
+    }
+
+    // Text to Speech Bahasa Indonesia Ramah Anak
+    function speakText(text) {
+      if (isSoundMuted || !('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel(); // batalkan suara sebelumnya
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.95; // Sedikit lebih santai untuk anak kelas 1
+        utterance.pitch = 1.2; // Nada ceria bersahabat
+
+        // Cari suara bahasa Indonesia jika didukung oleh browser/OS
+        const voices = window.speechSynthesis.getVoices();
+        const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+        if (idVoice) utterance.voice = idVoice;
+
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn("TTS error:", e);
+      }
+    }
+
+    function speakInstruction(text) {
+      playTapSound();
+      speakText(text);
+    }
+
+    function toggleSound() {
+      isSoundMuted = !isSoundMuted;
+      const icon = document.getElementById('soundIcon');
+      const btn = document.getElementById('btnSoundToggle');
+      if (isSoundMuted) {
+        icon.className = 'fa-solid fa-volume-xmark text-lg text-rose-500';
+        btn.classList.add('border-rose-300', 'bg-rose-50');
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      } else {
+        icon.className = 'fa-solid fa-volume-high text-lg text-sky-600';
+        btn.classList.remove('border-rose-300', 'bg-rose-50');
+        playTapSound();
+      }
+    }
+  </script>
+
+  <script>
+    /* ========================================================
+       STATE APLIKASI & MANAJEMEN PENYIMPANAN NILAI SISWA
+       ======================================================== */
+    const STORAGE_KEY = 'PANCASILA_SD1_REKAP_NILAI';
+
+    const appState = {
+      currentScreen: 'screenLogin',
+      studentName: '',
+      studentClass: '',
+      startTime: null,
+      selectedLeftSila: null,
+      selectedRightSymbol: null,
+      userMatches: {}, // mapping leftId -> rightId
+      shuffledRightIds: [],
+      currentScore: 0,
+      totalQuestions: 5,
+      correctCount: 0
+    };
+
+    // Pindah halaman dengan transisi visual
+    function goToScreen(screenId) {
+      const screens = ['screenLogin', 'screenVideo', 'screenGame', 'screenResult'];
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.remove('hidden');
+        appState.currentScreen = screenId;
+      }
+
+      // Tampilkan atau sembunyikan tombol kembali menu awal
+      const btnHome = document.getElementById('btnHome');
+      if (screenId === 'screenLogin') {
+        btnHome.classList.add('hidden');
+      } else {
+        btnHome.classList.remove('hidden');
+      }
+
+      // Pastikan audio canvas resize saat masuk game
+      if (screenId === 'screenGame') {
+        setTimeout(resizeCanvas, 150);
+      }
+    }
+
+    // Pilihan cepat kelas
+    function selectQuickClass(className) {
+      document.getElementById('inputStudentClass').value = className;
+      playTapSound();
+    }
+
+    // Submit form login siswa
+    function handleLoginSubmit(event) {
+      event.preventDefault();
+      initAudio();
+      playTapSound();
+
+      const nameInput = document.getElementById('inputStudentName').value.trim();
+      const classInput = document.getElementById('inputStudentClass').value.trim();
+
+      if (!nameInput || !classInput) {
+        showCustomDialog("Belum Lengkap", "Silakan masukkan nama lengkap dan kelasmu ya!", "✏️");
+        return;
+      }
+
+      appState.studentName = nameInput;
+      appState.studentClass = classInput;
+
+      // Update badge identitas di bar atas
+      document.getElementById('studentBadge').classList.remove('hidden');
+      document.getElementById('studentBadge').classList.add('flex');
+      document.getElementById('badgeNameDisplay').textContent = nameInput;
+      document.getElementById('badgeClassDisplay').textContent = classInput;
+
+      // Ucapkan sambutan hangat
+      speakText(`Halo ${nameInput}, selamat datang di Petualangan Lambang Pancasila!`);
+
+      // Lanjut ke Slide Video Pembelajaran
+      goToScreen('screenVideo');
+    }
+
+    // Dialog konfirmasi kembali ke awal (tidak pakai browser alert/confirm)
+    function confirmGoHome() {
+      playTapSound();
+      showCustomConfirm(
+        "Kembali ke Menu Awal?",
+        "Apakah kamu ingin kembali ke halaman utama untuk mengganti nama atau mengulang materi?",
+        () => {
+          goToScreen('screenLogin');
+          document.getElementById('studentBadge').classList.add('hidden');
+          document.getElementById('studentBadge').classList.remove('flex');
+        }
+      );
+    }
+
+    // Pembacaan ringkasan sila saat kartu ditekan
+    function readSilaOverview(silaNumber) {
+      playTapSound();
+      const asset = PANCASILA_ASSETS[silaNumber];
+      if (asset) {
+        speakText(asset.soundText);
+      }
+    }
+  </script>
+
+  <script>
+    /* ========================================================
+       LOGIKA GAME MENJODOHKAN & PENGGAMBARAN GARIS PENGHUBUNG
+       ======================================================== */
+    const SILA_LIST = [
+      { id: 1, label: "Sila Ke-1", title: "Ketuhanan Yang Maha Esa", icon: "⭐" },
+      { id: 2, label: "Sila Ke-2", title: "Kemanusiaan yang Adil dan Beradab", icon: "⛓️" },
+      { id: 3, label: "Sila Ke-3", title: "Persatuan Indonesia", icon: "🌳" },
+      { id: 4, label: "Sila Ke-4", title: "Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan", icon: "🐂" },
+      { id: 5, label: "Sila Ke-5", title: "Keadilan Sosial bagi Seluruh Rakyat Indonesia", icon: "🌾" }
+    ];
+
+    function startGame() {
+      initAudio();
+      playTapSound();
+      appState.startTime = new Date();
+      appState.userMatches = {};
+      appState.selectedLeftSila = null;
+      appState.selectedRightSymbol = null;
+
+      // Acak urutan kartu simbol di sebelah kanan
+      const ids = [1, 2, 3, 4, 5];
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+      appState.shuffledRightIds = ids;
+
+      renderGameCards();
+      goToScreen('screenGame');
+      speakText("Mari bermain menjodohkan. Hubungkan setiap teks sila dengan gambar lambang yang sesuai!");
+    }
+
+    // Render kartu soal kiri & kartu lambang kanan
+    function renderGameCards() {
+      const leftCol = document.getElementById('leftSilaColumn');
+      const rightCol = document.getElementById('rightSymbolColumn');
+
+      leftCol.innerHTML = '';
+      rightCol.innerHTML = '';
+
+      // 1. Kolom Kiri: Teks Sila 1 s.d. 5
+      SILA_LIST.forEach(item => {
+        const card = document.createElement('div');
+        card.id = `leftCard_${item.id}`;
+        card.className = `sila-card p-3 sm:p-4 rounded-2xl border-3 border-slate-300 bg-white shadow-md cursor-pointer transition-all duration-200 flex items-center justify-between gap-2 relative hover:border-amber-400`;
+        card.onclick = () => onSelectLeftSila(item.id);
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5 sm:gap-3 flex-1">
+            <span class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-red-100 text-red-600 font-extrabold flex items-center justify-center text-sm sm:text-base border border-red-300 shrink-0">
+              ${item.id}
+            </span>
+            <div class="text-left">
+              <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 leading-tight">${item.label}</h4>
+              <p class="text-[11px] sm:text-xs text-slate-600 font-reading line-clamp-2 leading-tight">${item.title}</p>
+            </div>
+          </div>
+          <!-- Tombol Speaker Pengucap -->
+          <button type="button" onclick="event.stopPropagation(); speakText('${item.label}: ${item.title}')" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center text-xs shrink-0" title="Dengarkan Suara">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <!-- Titik Hubung Port Kanan -->
+          <div class="w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white -mr-5 port-node shadow-sm"></div>
+        `;
+        leftCol.appendChild(card);
+      });
+
+      // 2. Kolom Kanan: Simbol Gambar (Diacak)
+      appState.shuffledRightIds.forEach(symbolId => {
+        const symbol = PANCASILA_ASSETS[symbolId];
+        const card = document.createElement('div');
+        card.id = `rightCard_${symbolId}`;
+        card.className = `symbol-card p-2 sm:p-3 rounded-2xl border-3 border-slate-300 bg-white shadow-md cursor-pointer transition-all duration-200 flex items-center gap-3 relative hover:border-amber-400`;
+        card.onclick = () => onSelectRightSymbol(symbolId);
+
+        card.innerHTML = `
+          <!-- Titik Hubung Port Kiri -->
+          <div class="w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white -ml-4 port-node shadow-sm"></div>
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 ${symbol.borderColor} bg-slate-100 p-1 flex items-center justify-center">
+            ${symbol.svg}
+          </div>
+          <div class="text-left flex-1">
+            <h4 class="font-bold text-xs sm:text-sm text-slate-800">${symbol.name}</h4>
+            <span class="inline-block mt-1 text-[10px] sm:text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-reading">Ketuk Gambar</span>
+          </div>
+        `;
+        rightCol.appendChild(card);
+      });
+
+      updateMatchCounter();
+      setTimeout(drawConnectedLines, 100);
+    }
+
+    // Seleksi kartu sila kiri
+    function onSelectLeftSila(silaId) {
+      playTapSound();
+      appState.selectedLeftSila = silaId;
+
+      // Update UI seleksi
+      document.querySelectorAll('.sila-card').forEach(el => el.classList.remove('card-selected'));
+      const activeEl = document.getElementById(`leftCard_${silaId}`);
+      if (activeEl) activeEl.classList.add('card-selected');
+
+      // Jika kartu lambang kanan sudah dipilih sebelumnya, langsung hubungkan
+      if (appState.selectedRightSymbol !== null) {
+        makePairConnection(silaId, appState.selectedRightSymbol);
+      }
+    }
+
+    // Seleksi kartu lambang kanan
+    function onSelectRightSymbol(symbolId) {
+      playTapSound();
+      appState.selectedRightSymbol = symbolId;
+
+      // Update UI seleksi
+      document.querySelectorAll('.symbol-card').forEach(el => el.classList.remove('card-selected'));
+      const activeEl = document.getElementById(`rightCard_${symbolId}`);
+      if (activeEl) activeEl.classList.add('card-selected');
+
+      // Jika sila kiri sudah dipilih sebelumnya, langsung hubungkan
+      if (appState.selectedLeftSila !== null) {
+        makePairConnection(appState.selectedLeftSila, symbolId);
+      }
+    }
+
+    // Menghubungkan pasangan Sila -> Simbol
+    function makePairConnection(leftId, rightId) {
+      // Hapus pasangan lama jika lambang kanan sudah terhubung dengan sila lain
+      for (const [k, v] of Object.entries(appState.userMatches)) {
+        if (v === rightId) {
+          delete appState.userMatches[k];
+        }
+      }
+
+      appState.userMatches[leftId] = rightId;
+      playConnectSound();
+
+      // Reset status seleksi aktif
+      appState.selectedLeftSila = null;
+      appState.selectedRightSymbol = null;
+      document.querySelectorAll('.sila-card, .symbol-card').forEach(el => {
+        el.classList.remove('card-selected');
+      });
+
+      // Beri tanda visual bahwa kartu telah berpasangan
+      refreshCardsMatchedState();
+      drawConnectedLines();
+      updateMatchCounter();
+    }
+
+    function refreshCardsMatchedState() {
+      // Bersihkan kelas lama
+      document.querySelectorAll('.sila-card, .symbol-card').forEach(el => {
+        el.classList.remove('card-matched');
+      });
+
+      for (const [leftId, rightId] of Object.entries(appState.userMatches)) {
+        const lCard = document.getElementById(`leftCard_${leftId}`);
+        const rCard = document.getElementById(`rightCard_${rightId}`);
+        if (lCard) lCard.classList.add('card-matched');
+        if (rCard) rCard.classList.add('card-matched');
+      }
+    }
+
+    function resetCurrentMatches() {
+      playTapSound();
+      appState.userMatches = {};
+      appState.selectedLeftSila = null;
+      appState.selectedRightSymbol = null;
+      refreshCardsMatchedState();
+      drawConnectedLines();
+      updateMatchCounter();
+    }
+
+    function updateMatchCounter() {
+      const count = Object.keys(appState.userMatches).length;
+      document.getElementById('matchCounter').textContent = count;
+    }
+  </script>
+
+  <script>
+    /* ========================================================
+       RENDER GARIS PENGHUBUNG DENGAN CANVAS INTERAKTIF
+       ======================================================== */
+    const LINE_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+
+    function resizeCanvas() {
+      const canvas = document.getElementById('connectingCanvas');
+      const container = document.getElementById('gamePlayArea');
+      if (!canvas || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      drawConnectedLines();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawConnectedLines() {
+      const canvas = document.getElementById('connectingCanvas');
+      const container = document.getElementById('gamePlayArea');
+      if (!canvas || !container) return;
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const containerRect = container.getBoundingClientRect();
+
+      Object.entries(appState.userMatches).forEach(([leftId, rightId], index) => {
+        const leftCard = document.getElementById(`leftCard_${leftId}`);
+        const rightCard = document.getElementById(`rightCard_${rightId}`);
+
+        if (leftCard && rightCard) {
+          const lRect = leftCard.getBoundingClientRect();
+          const rRect = rightCard.getBoundingClientRect();
+
+          // Koordinat titik tengah sambungan
+          const startX = lRect.right - containerRect.left;
+          const startY = lRect.top + (lRect.height / 2) - containerRect.top;
+          const endX = rRect.left - containerRect.left;
+          const endY = rRect.top + (rRect.height / 2) - containerRect.top;
+
+          const color = LINE_COLORS[(parseInt(leftId) - 1) % LINE_COLORS.length];
+
+          // Lukis kurva bezier indah penghubung kartu
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          const cp1x = startX + (endX - startX) * 0.5;
+          const cp1y = startY;
+          const cp2x = startX + (endX - startX) * 0.5;
+          const cp2y = endY;
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 5;
+          ctx.lineCap = 'round';
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 8;
+          ctx.stroke();
+
+          // Titik simpul (node dot)
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+
+          ctx.beginPath();
+          ctx.arc(startX, startY, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(endX, endY, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      });
+    }
+  </script>
+
+  <script>
+    /* ========================================================
+       EVALUASI NILAI, AUTO-SAVE KE DATABASE & EKSPOR EXCEL
+       ======================================================== */
+    function submitAndEvaluateQuiz() {
+      playTapSound();
+      const connectedCount = Object.keys(appState.userMatches).length;
+
+      // Peringatan jika belum 5 sila dihubungkan
+      if (connectedCount < 5) {
+        playWobbleSound();
+        showCustomDialog(
+          "Belum Selesai!",
+          `Kamu baru menghubungkan ${connectedCount} dari 5 sila. Yuk pasangkan semuanya sampai garisnya lengkap ya!`,
+          "🧩"
+        );
+        speakText(`Kamu baru memasangkan ${connectedCount} sila. Ayo pasangkan semuanya sampai 5 ya!`);
+        return;
+      }
+
+      // Hitung skor: Tiap jawaban benar bernilai 20 poin (Total 100)
+      let correct = 0;
+      for (let silaId = 1; silaId <= 5; silaId++) {
+        if (parseInt(appState.userMatches[silaId]) === silaId) {
+          correct++;
+        }
+      }
+
+      const score = correct * 20;
+      appState.currentScore = score;
+      appState.correctCount = correct;
+
+      // Durasi pengerjaan
+      const now = new Date();
+      const diffSec = Math.max(1, Math.round((now - appState.startTime) / 1000));
+      const minutes = Math.floor(diffSec / 60);
+      const seconds = diffSec % 60;
+      const durationFormatted = `${minutes > 0 ? minutes + ' mnt ' : ''}${seconds} dtk`;
+
+      // Simpan OTOMATIS ke LocalStorage untuk Guru
+      saveStudentScoreAutomatically({
+        name: appState.studentName,
+        className: appState.studentClass,
+        score: score,
+        correctCount: correct,
+        totalQuestions: 5,
+        duration: durationFormatted,
+        timestamp: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
+        rawDate: new Date().toISOString()
+      });
+
+      // Tampilkan Halaman Hasil dengan Efek
+      showResultScreen(score, correct);
+    }
+
+    function showResultScreen(score, correct) {
+      goToScreen('screenResult');
+
+      document.getElementById('resultGreeting').textContent = `Hebat Sekali, ${appState.studentName}!`;
+      document.getElementById('scoreDisplay').textContent = score;
+      document.getElementById('correctSummaryText').textContent = `Jawaban Benar: ${correct} dari 5 Soal`;
+
+      // Pengaturan bintang penghargaan & ucapan
+      const starContainer = document.getElementById('starContainer');
+      const trophyIcon = document.getElementById('trophyIcon');
+      const feedback = document.getElementById('resultFeedback');
+
+      if (score === 100) {
+        trophyIcon.textContent = "🏆";
+        feedback.textContent = "Luar biasa sempurna! Kamu sudah sangat hafal seluruh lambang Pancasila!";
+        starContainer.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i>';
+        playVictoryFanfare();
+        triggerConfettiCelebration();
+        speakText(`Luar biasa ${appState.studentName}! Nilaimu seratus sempurna!`);
+      } else if (score >= 60) {
+        trophyIcon.textContent = "🌟";
+        feedback.textContent = "Bagus sekali! Kamu sudah mengenal sebagian besar lambang Pancasila dengan baik.";
+        starContainer.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i><i class="fa-regular fa-star text-amber-300"></i>';
+        playVictoryFanfare();
+        speakText(`Bagus sekali ${appState.studentName}, kamu mendapat nilai ${score}!`);
+      } else {
+        trophyIcon.textContent = "💪";
+        feedback.textContent = "Tetap semangat! Ayo pelajari lagi videonya dan coba main sekali lagi ya!";
+        starContainer.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i><i class="fa-regular fa-star text-amber-300"></i><i class="fa-regular fa-star text-amber-300"></i>';
+        speakText(`Tetap semangat belajar ${appState.studentName}!`);
+      }
+    }
+
+    // Efek Selebrasi Kembang Api Konfeti Ramah Anak
+    function triggerConfettiCelebration() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 50,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+        }, 300);
+      }
+    }
+
+    // Simpan otomatis ke memori lokal
+    function saveStudentScoreAutomatically(record) {
+      try {
+        const existingData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        existingData.unshift(record); // Data terbaru berada di paling atas
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+      } catch (err) {
+        console.error("Gagal menyimpan ke LocalStorage:", err);
+      }
+    }
+
+    function getAllStoredScores() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // ==========================================
+    // FITUR UNDUH LAPORAN KE EXCEL (SHEETJS .XLSX)
+    // ==========================================
+
+    // Unduh Nilai Siswa Tunggal
+    function downloadStudentExcelResult() {
+      playTapSound();
+      if (!window.XLSX) {
+        showCustomDialog("Pemberitahuan", "Komponen Excel sedang dimuat, coba sesaat lagi.", "⏳");
+        return;
+      }
+
+      const rowData = [{
+        "Nama Siswa": appState.studentName,
+        "Kelas": appState.studentClass,
+        "Skor Akhir": appState.currentScore,
+        "Jumlah Benar": `${appState.correctCount} dari 5`,
+        "Status": appState.currentScore >= 60 ? "TUNTAS" : "REMIDIAL",
+        "Waktu Kuis": new Date().toLocaleString('id-ID')
+      }];
+
+      const worksheet = XLSX.utils.json_to_sheet(rowData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Nilai");
+
+      // Set lebar kolom otomatis agar rapi saat dibuka di Microsoft Excel
+      worksheet['!cols'] = [
+        { wch: 26 }, // Nama
+        { wch: 12 }, // Kelas
+        { wch: 14 }, // Skor
+        { wch: 16 }, // Jumlah Benar
+        { wch: 14 }, // Status
+        { wch: 24 }  // Waktu
+      ];
+
+      const cleanFileName = `Nilai_Pancasila_${appState.studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${appState.studentClass}.xlsx`;
+      XLSX.writeFile(workbook, cleanFileName);
+
+      showCustomDialog("Berhasil!", `File Excel ${cleanFileName} berhasil diunduh ke perangkatmu.`, "📥");
+    }
+
+    // Unduh Seluruh Data Kelas (Untuk Guru)
+    function exportAllStudentsExcel() {
+      playTapSound();
+      const records = getAllStoredScores();
+
+      if (records.length === 0) {
+        showCustomDialog("Data Masih Kosong", "Belum ada siswa yang menyelesaikan kuis untuk diekspor.", "📋");
+        return;
+      }
+
+      const formattedRows = records.map((r, index) => ({
+        "No": index + 1,
+        "Nama Siswa": r.name,
+        "Kelas": r.className,
+        "Skor (0-100)": r.score,
+        "Benar": r.correctCount,
+        "Total Soal": r.totalQuestions,
+        "Durasi": r.duration,
+        "Tanggal Pengerjaan": r.timestamp,
+        "Keterangan": r.score >= 60 ? "TUNTAS" : "PERLU PENDAMPINGAN"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(formattedRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Nilai Siswa");
+
+      worksheet['!cols'] = [
+        { wch: 6 },
+        { wch: 28 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 24 },
+        { wch: 22 }
+      ];
+
+      const today = new Date().toISOString().slice(0, 10);
+      const fileName = `Rekap_Nilai_Pancasila_Kelas1_${today}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      showCustomDialog("Ekspor Berhasil", `Seluruh data (${records.length} siswa) berhasil diekspor ke file Excel: ${fileName}`, "📊");
+    }
+
+    function playAgain() {
+      startGame();
+    }
+  </script>
+
+  <script>
+    /* ========================================================
+       MODAL REKAP GURU & DIALOG PESAN PENGGANTI ALERT/CONFIRM
+       ======================================================== */
+    function openTeacherModal() {
+      playTapSound();
+      const modal = document.getElementById('modalTeacher');
+      const tableBody = document.getElementById('teacherTableBody');
+      const emptyState = document.getElementById('teacherEmptyState');
+      const totalDisplay = document.getElementById('teacherTotalStudents');
+
+      const data = getAllStoredScores();
+      totalDisplay.textContent = data.length;
+
+      tableBody.innerHTML = '';
+      if (data.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        data.forEach((item, index) => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+          row.innerHTML = `
+            <td class="p-3 font-bold text-slate-500">${index + 1}</td>
+            <td class="p-3 font-extrabold text-slate-800">${item.name}</td>
+            <td class="p-3 font-semibold text-slate-600">${item.className}</td>
+            <td class="p-3">
+              <span class="inline-block px-2.5 py-1 rounded-lg font-black text-xs ${item.score >= 80 ? 'bg-emerald-100 text-emerald-700' : (item.score >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700')}">
+                ${item.score}
+              </span>
+            </td>
+            <td class="p-3 font-bold text-slate-600">${item.correctCount}/5</td>
+            <td class="p-3 text-xs text-slate-400">${item.timestamp}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeTeacherModal() {
+      playTapSound();
+      document.getElementById('modalTeacher').classList.add('hidden');
+    }
+
+    function confirmClearAllData() {
+      showCustomConfirm(
+        "Hapus Seluruh Data?",
+        "Apakah Bapak/Ibu guru yakin ingin mengosongkan seluruh riwayat pengerjaan nilai siswa pada perangkat ini?",
+        () => {
+          localStorage.removeItem(STORAGE_KEY);
+          openTeacherModal(); // Refresh tabel
+          showCustomDialog("Dihapus", "Seluruh riwayat nilai siswa telah dibersihkan.", "🗑️");
+        }
+      );
+    }
+
+    // Dialog Pengganti alert()
+    function showCustomDialog(title, message, icon = "⭐") {
+      const dialog = document.getElementById('customDialog');
+      document.getElementById('dialogTitle').textContent = title;
+      document.getElementById('dialogMessage').textContent = message;
+      document.getElementById('dialogIcon').textContent = icon;
+
+      const actions = document.getElementById('dialogActions');
+      actions.innerHTML = `
+        <button onclick="closeCustomDialog()" class="btn-bouncy px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl border-2 border-amber-700 text-sm">
+          Mengerti
+        </button>
+      `;
+
+      dialog.classList.remove('hidden');
+    }
+
+    function closeCustomDialog() {
+      playTapSound();
+      document.getElementById('customDialog').classList.add('hidden');
+    }
+
+    // Dialog Pengganti confirm()
+    function showCustomConfirm(title, message, onConfirm) {
+      const dialog = document.getElementById('customDialog');
+      document.getElementById('dialogTitle').textContent = title;
+      document.getElementById('dialogMessage').textContent = message;
+      document.getElementById('dialogIcon').textContent = "❓";
+
+      const actions = document.getElementById('dialogActions');
+      actions.innerHTML = `
+        <button id="btnDialogCancel" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-sm transition">
+          Batal
+        </button>
+        <button id="btnDialogConfirm" class="btn-bouncy px-5 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl border-2 border-red-700 text-sm transition">
+          Ya, Lanjutkan
+        </button>
+      `;
+
+      document.getElementById('btnDialogCancel').onclick = () => {
+        playTapSound();
+        dialog.classList.add('hidden');
+      };
+
+      document.getElementById('btnDialogConfirm').onclick = () => {
+        playTapSound();
+        dialog.classList.add('hidden');
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+
+      dialog.classList.remove('hidden');
+    }
+
+    // Inisialisasi awal saat halaman termuat
+    window.addEventListener('load', () => {
+      // Pastikan siap di papan interaktif dan mobile
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>
+       
+      
+
+        
